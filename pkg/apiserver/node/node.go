@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package kubeconfig
+package node
 
 import (
 	"context"
@@ -50,9 +50,11 @@ func NewService(
 
 // Register mounts our HTTP handler on the mux.
 func Register(r *gin.RouterGroup, s *Service) {
-	endpoint := r.Group("/kubeconfig")
+	endpoint := r.Group("/node")
 
-	endpoint.POST("/registry/:name", s.registry)
+	endpoint.POST("/k8s/registry/:name", s.k8sRegistry)
+	endpoint.POST("/physic/registry/:name", s.physicRegistry)
+
 	endpoint.DELETE("/delete/:name", s.delete)
 
 	// initial k8s client saved in store
@@ -63,14 +65,13 @@ func Register(r *gin.RouterGroup, s *Service) {
 	}
 
 	for _, node := range nodes {
-		if node.Kind != "k8s" {
-			continue
-		}
-
-		// save client into poll
-		_, err = clientpool.K8sClients.KubeClient(node.Name, []byte(node.Config))
-		if err != nil {
-			fmt.Println(err)
+		core.Nodes[node.Name] = node
+		if node.Kind == "k8s" {
+			// save client into poll
+			_, err = clientpool.K8sClients.KubeClient(node.Name, []byte(node.Config))
+			if err != nil {
+				fmt.Println(err)
+			}
 		}
 	}
 }
@@ -90,7 +91,7 @@ func (s *Service) delete(c *gin.Context) {
 	return
 }
 
-func (s *Service) registry(c *gin.Context) {
+func (s *Service) k8sRegistry(c *gin.Context) {
 	name := c.Param("name")
 	configBytes, err := c.GetRawData()
 	if err != nil {
@@ -120,6 +121,34 @@ func (s *Service) registry(c *gin.Context) {
 		_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))
 		return
 	}
+
+	return
+}
+
+func (s *Service) physicRegistry(c *gin.Context) {
+	name := c.Param("name")
+	configBytes, err := c.GetRawData()
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))
+		return
+	}
+	fmt.Println("name", name, "config", string(configBytes))
+
+	node := &core.Node{
+		Name:   name,
+		Kind:   "physic",
+		Config: string(configBytes),
+	}
+
+	err = s.node.Create(context.Background(), node)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))
+		return
+	}
+
+	core.Nodes[name] = node
 
 	return
 }

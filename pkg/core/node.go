@@ -17,6 +17,8 @@ import (
 	"context"
 )
 
+var Nodes = make(map[string]*Node)
+
 // EventStore defines operations for working with event.
 type NodeStore interface {
 	// List returns an event list from the datastore.

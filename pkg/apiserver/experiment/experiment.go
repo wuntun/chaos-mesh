@@ -14,6 +14,7 @@
 package experiment
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -89,6 +90,8 @@ func Register(r *gin.RouterGroup, s *Service) {
 	endpoint.PUT("/pause/:uid", s.pauseExperiment)
 	endpoint.PUT("/start/:uid", s.startExperiment)
 	endpoint.GET("/state", s.state)
+
+	endpoint.POST("/physic/new", s.createPhysicExperiment)
 }
 
 // Base represents the base info of an experiment.
@@ -119,6 +122,71 @@ type updateExperimentFunc func(*core.ExperimentYAMLDescription, client.Client) e
 // StatusResponse defines a common status struct.
 type StatusResponse struct {
 	Status string `json:"status"`
+}
+
+// example:
+// curl -X POST 127.0.0.1:2333/api/node/physic/registry/test -d "http://127.0.0.1:31767"
+// export EXP_JSON='{"name": "ci-test", "namespace": "busybox", "scope": {"mode":"one", "namespace_selectors": ["busybox"]}, "target": {"kind": "StressChaos", "stress_chaos": { "cpu": {"load": 1}}}}'
+// curl -X POST 127.0.0.1:2333/api/experiments/physic/new -H "Content-Type: application/json" -d $EXP_JSON -H "name: test"
+func (s *Service) createPhysicExperiment(c *gin.Context) {
+	name := c.Request.Header.Get("name")
+
+	node, ok := core.Nodes[name]
+	if !ok {
+		c.Status(http.StatusBadRequest)
+		_ = c.Error(fmt.Errorf("physic node %s not found", name))
+		return
+	}
+
+	exp := &core.ExperimentInfo{}
+	if err := c.ShouldBindJSON(exp); err != nil {
+		c.Status(http.StatusBadRequest)
+		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
+		return
+	}
+
+	// TODO: only support stress chaos now
+	chaos := &v1alpha1.StressChaos{
+		ObjectMeta: v1.ObjectMeta{
+			Name:        exp.Name,
+			Namespace:   exp.Namespace,
+			Labels:      exp.Labels,
+			Annotations: exp.Annotations,
+		},
+		Spec: v1alpha1.StressChaosSpec{
+			Selector:          exp.Scope.ParseSelector(),
+			Mode:              v1alpha1.PodMode(exp.Scope.Mode),
+			Value:             exp.Scope.Value,
+			Stressors:         exp.Target.StressChaos.Stressors,
+			StressngStressors: exp.Target.StressChaos.StressngStressors,
+		},
+	}
+
+	if exp.Scheduler.Cron != "" {
+		chaos.Spec.Scheduler = &v1alpha1.SchedulerSpec{Cron: exp.Scheduler.Cron}
+	}
+
+	if exp.Scheduler.Duration != "" {
+		chaos.Spec.Duration = &exp.Scheduler.Duration
+	}
+
+	if exp.Target.StressChaos.ContainerName != nil {
+		chaos.Spec.ContainerName = exp.Target.StressChaos.ContainerName
+	}
+	chaosBytes, err := json.Marshal(chaos)
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
+		return
+	}
+	resp, err := http.Post(fmt.Sprintf("%s/stress", node.Config), "application/json", bytes.NewBuffer(chaosBytes))
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
+		return
+	}
+	fmt.Println(resp)
+	return
 }
 
 // @Summary Create a new chaos experiment.
