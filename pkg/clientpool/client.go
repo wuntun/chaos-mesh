@@ -15,14 +15,18 @@ package clientpool
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"sync"
 
 	lru "github.com/hashicorp/golang-lru"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
 	authorizationv1 "k8s.io/client-go/kubernetes/typed/authorization/v1"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	pkgclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/chaos-mesh/chaos-mesh/pkg/mock"
@@ -36,6 +40,8 @@ type Clients interface {
 	AuthClient(token string) (authorizationv1.AuthorizationV1Interface, error)
 	Num() int
 	Contains(token string) bool
+
+	KubeClient(name string, config []byte) (*KubeClient, error)
 }
 
 type LocalClient struct {
@@ -71,6 +77,10 @@ func (c *LocalClient) AuthClient(token string) (authorizationv1.AuthorizationV1I
 	return c.authClient, nil
 }
 
+func (c *LocalClient) KubeClient(name string, config []byte) (*KubeClient, error) {
+	return &KubeClient{}, nil
+}
+
 // Num returns the num of clients
 func (c *LocalClient) Num() int {
 	return 1
@@ -89,6 +99,7 @@ type ClientsPool struct {
 	localConfig *rest.Config
 	clients     *lru.Cache
 	authClients *lru.Cache
+	kubeClients map[string]*KubeClient
 }
 
 // New creates a new Clients
@@ -103,11 +114,14 @@ func NewClientPool(localConfig *rest.Config, scheme *runtime.Scheme, maxClientNu
 		return nil, err
 	}
 
+	kubeClients := make(map[string]*KubeClient)
+
 	return &ClientsPool{
 		localConfig: localConfig,
 		scheme:      scheme,
 		clients:     clients,
 		authClients: authClients,
+		kubeClients: kubeClients,
 	}, nil
 }
 
@@ -172,6 +186,40 @@ func (c *ClientsPool) AuthClient(token string) (authorizationv1.AuthorizationV1I
 	_ = c.authClients.Add(token, authCli)
 
 	return authCli, nil
+}
+
+func (c *ClientsPool) KubeClient(name string, kubeConfig []byte) (*KubeClient, error) {
+	c.Lock()
+	defer c.Unlock()
+
+	if client, ok := c.kubeClients[name]; ok {
+		return client, nil
+	}
+
+	if len(kubeConfig) == 0 {
+		return nil, fmt.Errorf("kube config is empty")
+	}
+
+	client := &KubeClient{}
+
+	config, err := clientcmd.RESTConfigFromKubeConfig(kubeConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	dynamicClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	client.DynamicClient = dynamicClient
+
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	client.DiscoveryClient = discoveryClient
+
+	return client, nil
 }
 
 // Num returns the num of clients

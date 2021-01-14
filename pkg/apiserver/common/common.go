@@ -30,7 +30,6 @@ import (
 	"github.com/chaos-mesh/chaos-mesh/pkg/selector"
 
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -74,7 +73,6 @@ func Register(r *gin.RouterGroup, s *Service) {
 	endpoint.GET("/labels", s.getLabels)
 	endpoint.GET("/annotations", s.getAnnotations)
 	endpoint.GET("/config", s.getConfig)
-	endpoint.POST("/kubeconfig", s.registryKubeConfig)
 }
 
 // @Summary Get pods from Kubernetes cluster.
@@ -117,39 +115,6 @@ func (s *Service) listPods(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, pods)
-}
-
-func (s *Service) registryKubeConfig(c *gin.Context) {
-	configBytes, err := c.GetRawData()
-	if err != nil {
-		c.Status(http.StatusInternalServerError)
-		_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))
-		return
-	}
-	fmt.Println("registryKubeConfig", string(configBytes))
-
-	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(configBytes))
-	if err != nil {
-		c.Status(http.StatusInternalServerError)
-		_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))
-		return
-	}
-	node := &core.Node{
-		Name:   config.Host,
-		Kind:   "k8s",
-		Config: string(configBytes),
-	}
-
-	fmt.Println(node)
-
-	err = s.node.Create(context.Background(), node)
-	if err != nil {
-		c.Status(http.StatusInternalServerError)
-		_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))
-		return
-	}
-
-	return
 }
 
 // @Summary Get all namespaces from Kubernetes cluster.

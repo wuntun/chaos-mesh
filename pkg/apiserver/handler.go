@@ -20,17 +20,20 @@ import (
 	"github.com/chaos-mesh/chaos-mesh/pkg/apiserver/common"
 	"github.com/chaos-mesh/chaos-mesh/pkg/apiserver/event"
 	"github.com/chaos-mesh/chaos-mesh/pkg/apiserver/experiment"
+	"github.com/chaos-mesh/chaos-mesh/pkg/apiserver/kubeconfig"
 )
 
 var handlerModule = fx.Options(
 	fx.Provide(
 		common.NewService,
+		kubeconfig.NewService,
 		experiment.NewService,
 		event.NewService,
 		archive.NewService,
 	),
 	fx.Invoke(
 		common.Register,
+		kubeconfig.Register,
 		experiment.Register,
 		event.Register,
 		archive.Register,
