@@ -84,7 +84,7 @@ func Register(r *gin.RouterGroup, s *Service) {
 // @Router /common/pods [post]
 // @Failure 500 {object} utils.APIError
 func (s *Service) listPods(c *gin.Context) {
-	kubeCli, err := clientpool.ExtractTokenAndGetClient(c.Request.Header)
+	kubeCli, err := clientpool.ExtractNameAndGetClient(c.Request.Header)
 	if err != nil {
 		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
 		return
@@ -206,7 +206,7 @@ type MapSlice map[string][]string
 // @Failure 500 {object} utils.APIError
 func (s *Service) getLabels(c *gin.Context) {
 
-	kubeCli, err := clientpool.ExtractTokenAndGetClient(c.Request.Header)
+	kubeCli, err := clientpool.ExtractNameAndGetClient(c.Request.Header)
 	if err != nil {
 		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
 		return
@@ -258,7 +258,7 @@ func (s *Service) getLabels(c *gin.Context) {
 // @Failure 500 {object} utils.APIError
 func (s *Service) getAnnotations(c *gin.Context) {
 
-	kubeCli, err := clientpool.ExtractTokenAndGetClient(c.Request.Header)
+	kubeCli, err := clientpool.ExtractNameAndGetClient(c.Request.Header)
 	if err != nil {
 		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
 		return

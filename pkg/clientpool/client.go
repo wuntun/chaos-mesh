@@ -22,8 +22,6 @@ import (
 
 	lru "github.com/hashicorp/golang-lru"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/dynamic"
 	authorizationv1 "k8s.io/client-go/kubernetes/typed/authorization/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -41,7 +39,7 @@ type Clients interface {
 	Num() int
 	Contains(token string) bool
 
-	KubeClient(name string, config []byte) (*KubeClient, error)
+	KubeClient(name string, config []byte) (pkgclient.Client, error)
 }
 
 type LocalClient struct {
@@ -77,8 +75,8 @@ func (c *LocalClient) AuthClient(token string) (authorizationv1.AuthorizationV1I
 	return c.authClient, nil
 }
 
-func (c *LocalClient) KubeClient(name string, config []byte) (*KubeClient, error) {
-	return &KubeClient{}, nil
+func (c *LocalClient) KubeClient(name string, config []byte) (pkgclient.Client, error) {
+	return c.client, nil
 }
 
 // Num returns the num of clients
@@ -99,7 +97,7 @@ type ClientsPool struct {
 	localConfig *rest.Config
 	clients     *lru.Cache
 	authClients *lru.Cache
-	kubeClients map[string]*KubeClient
+	kubeClients map[string]pkgclient.Client
 }
 
 // New creates a new Clients
@@ -114,7 +112,7 @@ func NewClientPool(localConfig *rest.Config, scheme *runtime.Scheme, maxClientNu
 		return nil, err
 	}
 
-	kubeClients := make(map[string]*KubeClient)
+	kubeClients := make(map[string]pkgclient.Client)
 
 	return &ClientsPool{
 		localConfig: localConfig,
@@ -188,7 +186,8 @@ func (c *ClientsPool) AuthClient(token string) (authorizationv1.AuthorizationV1I
 	return authCli, nil
 }
 
-func (c *ClientsPool) KubeClient(name string, kubeConfig []byte) (*KubeClient, error) {
+// only set kubeConfig the first time
+func (c *ClientsPool) KubeClient(name string, kubeConfig []byte) (pkgclient.Client, error) {
 	c.Lock()
 	defer c.Unlock()
 
@@ -200,24 +199,19 @@ func (c *ClientsPool) KubeClient(name string, kubeConfig []byte) (*KubeClient, e
 		return nil, fmt.Errorf("kube config is empty")
 	}
 
-	client := &KubeClient{}
-
 	config, err := clientcmd.RESTConfigFromKubeConfig(kubeConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	dynamicClient, err := dynamic.NewForConfig(config)
+	client, err := pkgclient.New(config, pkgclient.Options{
+		Scheme: c.scheme,
+	})
 	if err != nil {
 		return nil, err
 	}
-	client.DynamicClient = dynamicClient
 
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-	client.DiscoveryClient = discoveryClient
+	c.kubeClients[name] = client
 
 	return client, nil
 }
@@ -244,6 +238,12 @@ func ExtractTokenFromHeader(header http.Header) string {
 	}
 
 	return ""
+}
+
+// ExtractNameAndGetClient extracts name from http header, and get the k8s client
+func ExtractNameAndGetClient(header http.Header) (pkgclient.Client, error) {
+	name := header.Get("name")
+	return K8sClients.KubeClient(name, []byte{})
 }
 
 // ExtractTokenAndGetClient extracts token from http header, and get the k8s client of this token

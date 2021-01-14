@@ -24,7 +24,6 @@ import (
 	"github.com/chaos-mesh/chaos-mesh/pkg/core"
 
 	"github.com/gin-gonic/gin"
-	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -55,6 +54,25 @@ func Register(r *gin.RouterGroup, s *Service) {
 
 	endpoint.POST("/registry/:name", s.registry)
 	endpoint.DELETE("/delete/:name", s.delete)
+
+	// initial k8s client saved in store
+	nodes, err := s.node.List(context.Background())
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	for _, node := range nodes {
+		if node.Kind != "k8s" {
+			continue
+		}
+
+		// save client into poll
+		_, err = clientpool.K8sClients.KubeClient(node.Name, []byte(node.Config))
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
 }
 
 func (s *Service) delete(c *gin.Context) {
@@ -80,17 +98,10 @@ func (s *Service) registry(c *gin.Context) {
 		_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))
 		return
 	}
-	fmt.Println("name", name, "registryKubeConfig", string(configBytes))
-
-	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(configBytes))
-	if err != nil {
-		c.Status(http.StatusInternalServerError)
-		_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))
-		return
-	}
+	fmt.Println("name", name, "registryKubeConfig")
 
 	// save client into poll
-	_, err = clientpool.K8sClients.KubeClient(config.Host, configBytes)
+	_, err = clientpool.K8sClients.KubeClient(name, configBytes)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))
