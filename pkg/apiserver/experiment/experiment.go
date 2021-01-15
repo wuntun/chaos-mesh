@@ -199,7 +199,7 @@ func (s *Service) createPhysicExperiment(c *gin.Context) {
 // @Failure 500 {object} utils.APIError
 // @Router /experiments/new [post]
 func (s *Service) createExperiment(c *gin.Context) {
-	kubeCli, err := clientpool.ExtractNameAndGetClient(c.Request.Header)
+	kubeCli, err := clientpool.ExtractNameAndGetClient(c)
 	if err != nil {
 		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
 		return
@@ -774,7 +774,7 @@ func (s *Service) getDNSChaosDetail(namespace string, name string, kubeCli clien
 // @Router /experiments [get]
 // @Failure 500 {object} utils.APIError
 func (s *Service) listExperiments(c *gin.Context) {
-	kubeCli, err := clientpool.ExtractNameAndGetClient(c.Request.Header)
+	kubeCli, err := clientpool.ExtractNameAndGetClient(c)
 	if err != nil {
 		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
 		return
@@ -838,7 +838,7 @@ func (s *Service) getExperimentDetail(c *gin.Context) {
 		expDetail Detail
 	)
 
-	kubeCli, err := clientpool.ExtractNameAndGetClient(c.Request.Header)
+	kubeCli, err := clientpool.ExtractNameAndGetClient(c)
 	if err != nil {
 		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
 		return
@@ -904,7 +904,7 @@ func (s *Service) deleteExperiment(c *gin.Context) {
 		exp       *core.Experiment
 	)
 
-	kubeCli, err := clientpool.ExtractNameAndGetClient(c.Request.Header)
+	kubeCli, err := clientpool.ExtractNameAndGetClient(c)
 	if err != nil {
 		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
 		return
@@ -989,7 +989,7 @@ func (s *Service) deleteExperiment(c *gin.Context) {
 // @Router /experiments/state [get]
 // @Failure 500 {object} utils.APIError
 func (s *Service) state(c *gin.Context) {
-	kubeCli, err := clientpool.ExtractNameAndGetClient(c.Request.Header)
+	kubeCli, err := clientpool.ExtractNameAndGetClient(c)
 	if err != nil {
 		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
 		return
@@ -1057,7 +1057,7 @@ func (s *Service) state(c *gin.Context) {
 func (s *Service) pauseExperiment(c *gin.Context) {
 	var experiment *core.Experiment
 
-	kubeCli, err := clientpool.ExtractNameAndGetClient(c.Request.Header)
+	kubeCli, err := clientpool.ExtractNameAndGetClient(c)
 	if err != nil {
 		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
 		return
@@ -1111,7 +1111,7 @@ func (s *Service) pauseExperiment(c *gin.Context) {
 func (s *Service) startExperiment(c *gin.Context) {
 	var experiment *core.Experiment
 
-	kubeCli, err := clientpool.ExtractNameAndGetClient(c.Request.Header)
+	kubeCli, err := clientpool.ExtractNameAndGetClient(c)
 	if err != nil {
 		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
 		return
@@ -1190,7 +1190,7 @@ func (s *Service) patchExperiment(exp *Base, annotations map[string]string, kube
 // @Failure 500 {object} utils.APIError
 // @Router /experiments/update [put]
 func (s *Service) updateExperiment(c *gin.Context) {
-	kubeCli, err := clientpool.ExtractNameAndGetClient(c.Request.Header)
+	kubeCli, err := clientpool.ExtractNameAndGetClient(c)
 	if err != nil {
 		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
 		return

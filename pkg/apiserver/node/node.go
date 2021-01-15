@@ -15,6 +15,7 @@ package node
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net/http"
 
@@ -52,9 +53,7 @@ func NewService(
 func Register(r *gin.RouterGroup, s *Service) {
 	endpoint := r.Group("/node")
 
-	endpoint.POST("/k8s/registry/:name", s.k8sRegistry)
-	endpoint.POST("/physic/registry/:name", s.physicRegistry)
-
+	endpoint.POST("/registry", s.registry)
 	endpoint.DELETE("/delete/:name", s.delete)
 
 	// initial k8s client saved in store
@@ -91,28 +90,34 @@ func (s *Service) delete(c *gin.Context) {
 	return
 }
 
-func (s *Service) k8sRegistry(c *gin.Context) {
-	name := c.Param("name")
-	configBytes, err := c.GetRawData()
-	if err != nil {
-		c.Status(http.StatusInternalServerError)
-		_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))
-		return
-	}
-	fmt.Println("name", name, "registryKubeConfig")
-
-	// save client into poll
-	_, err = clientpool.K8sClients.KubeClient(name, configBytes)
-	if err != nil {
-		c.Status(http.StatusInternalServerError)
-		_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))
+func (s *Service) registry(c *gin.Context) {
+	node := &core.Node{}
+	if err := c.ShouldBindJSON(node); err != nil {
+		c.Status(http.StatusBadRequest)
+		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
 		return
 	}
 
-	node := &core.Node{
-		Name:   name,
-		Kind:   "k8s",
-		Config: string(configBytes),
+	configBytes, err := base64.StdEncoding.DecodeString(node.Config)
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
+		return
+	}
+
+	node.Config = string(configBytes)
+	fmt.Println("registry node", node)
+
+	if node.Kind == "k8s" {
+		// save client into poll
+		_, err := clientpool.K8sClients.KubeClient(node.Name, configBytes)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))
+			return
+		} else {
+			core.Nodes[node.Name] = node
+		}
 	}
 
 	err = s.node.Create(context.Background(), node)
@@ -121,34 +126,6 @@ func (s *Service) k8sRegistry(c *gin.Context) {
 		_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))
 		return
 	}
-
-	return
-}
-
-func (s *Service) physicRegistry(c *gin.Context) {
-	name := c.Param("name")
-	configBytes, err := c.GetRawData()
-	if err != nil {
-		c.Status(http.StatusInternalServerError)
-		_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))
-		return
-	}
-	fmt.Println("name", name, "config", string(configBytes))
-
-	node := &core.Node{
-		Name:   name,
-		Kind:   "physic",
-		Config: string(configBytes),
-	}
-
-	err = s.node.Create(context.Background(), node)
-	if err != nil {
-		c.Status(http.StatusInternalServerError)
-		_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))
-		return
-	}
-
-	core.Nodes[name] = node
 
 	return
 }

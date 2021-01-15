@@ -84,7 +84,7 @@ func Register(r *gin.RouterGroup, s *Service) {
 // @Router /common/pods [post]
 // @Failure 500 {object} utils.APIError
 func (s *Service) listPods(c *gin.Context) {
-	kubeCli, err := clientpool.ExtractNameAndGetClient(c.Request.Header)
+	kubeCli, err := clientpool.ExtractNameAndGetClient(c)
 	if err != nil {
 		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
 		return
@@ -126,11 +126,16 @@ func (s *Service) listPods(c *gin.Context) {
 // @Router /common/namespaces [get]
 // @Failure 500 {object} utils.APIError
 func (s *Service) listNamespaces(c *gin.Context) {
+	kubeCli, err := clientpool.ExtractNameAndGetClient(c)
+	if err != nil {
+		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
+		return
+	}
 
 	var namespaces sort.StringSlice
 
 	var nsList v1.NamespaceList
-	if err := s.kubeCli.List(context.Background(), &nsList); err != nil {
+	if err = kubeCli.List(context.Background(), &nsList); err != nil {
 		c.Status(http.StatusInternalServerError)
 		_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))
 		return
@@ -152,12 +157,17 @@ func (s *Service) listNamespaces(c *gin.Context) {
 // @Router /common/chaos-available-namespaces [get]
 // @Failure 500 {object} utils.APIError
 func (s *Service) getChaosAvailableNamespaces(c *gin.Context) {
+	kubeCli, err := clientpool.ExtractNameAndGetClient(c)
+	if err != nil {
+		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
+		return
+	}
 
 	var namespaces sort.StringSlice
 
 	if s.conf.ClusterScoped {
 		var nsList v1.NamespaceList
-		if err := s.kubeCli.List(context.Background(), &nsList); err != nil {
+		if err := kubeCli.List(context.Background(), &nsList); err != nil {
 			c.Status(http.StatusInternalServerError)
 			_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))
 			return
@@ -206,7 +216,7 @@ type MapSlice map[string][]string
 // @Failure 500 {object} utils.APIError
 func (s *Service) getLabels(c *gin.Context) {
 
-	kubeCli, err := clientpool.ExtractNameAndGetClient(c.Request.Header)
+	kubeCli, err := clientpool.ExtractNameAndGetClient(c)
 	if err != nil {
 		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
 		return
@@ -258,7 +268,7 @@ func (s *Service) getLabels(c *gin.Context) {
 // @Failure 500 {object} utils.APIError
 func (s *Service) getAnnotations(c *gin.Context) {
 
-	kubeCli, err := clientpool.ExtractNameAndGetClient(c.Request.Header)
+	kubeCli, err := clientpool.ExtractNameAndGetClient(c)
 	if err != nil {
 		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
 		return

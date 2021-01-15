@@ -20,6 +20,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/gin-gonic/gin"
 	lru "github.com/hashicorp/golang-lru"
 	"k8s.io/apimachinery/pkg/runtime"
 	authorizationv1 "k8s.io/client-go/kubernetes/typed/authorization/v1"
@@ -241,8 +242,8 @@ func ExtractTokenFromHeader(header http.Header) string {
 }
 
 // ExtractNameAndGetClient extracts name from http header, and get the k8s client
-func ExtractNameAndGetClient(header http.Header) (pkgclient.Client, error) {
-	name := header.Get("name")
+func ExtractNameAndGetClient(c *gin.Context) (pkgclient.Client, error) {
+	name := c.Query("name")
 	return K8sClients.KubeClient(name, []byte{})
 }
 
