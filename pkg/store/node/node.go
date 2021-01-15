@@ -15,6 +15,7 @@ package node
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jinzhu/gorm"
 
@@ -56,6 +57,10 @@ func (n *nodeStore) Find(ctx context.Context, name string) (*core.Node, error) {
 	nodes := make([]*core.Node, 0)
 	if err := n.db.Where("name = ?", name).Find(&nodes).Error; err != nil && !gorm.IsRecordNotFoundError(err) {
 		return nil, err
+	}
+
+	if len(nodes) == 0 {
+		return nil, fmt.Errorf("node %s not found", name)
 	}
 
 	return nodes[0], nil

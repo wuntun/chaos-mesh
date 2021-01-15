@@ -55,6 +55,8 @@ func Register(r *gin.RouterGroup, s *Service) {
 
 	endpoint.POST("/registry", s.registry)
 	endpoint.DELETE("/delete/:name", s.delete)
+	endpoint.GET("/list", s.list)
+	endpoint.GET("/get/:name", s.get)
 
 	// initial k8s client saved in store
 	nodes, err := s.node.List(context.Background())
@@ -88,6 +90,33 @@ func (s *Service) delete(c *gin.Context) {
 	}
 
 	return
+}
+
+func (s *Service) list(c *gin.Context) {
+	nodes, err := s.node.List(context.Background())
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))
+		return
+	}
+	nodesJson := make(map[string]*core.Node)
+	for _, node := range nodes {
+		nodesJson[node.Name] = node
+	}
+
+	c.JSON(http.StatusOK, nodesJson)
+}
+
+func (s *Service) get(c *gin.Context) {
+	name := c.Param("name")
+	node, err := s.node.Find(context.Background(), name)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))
+		return
+	}
+
+	c.JSON(http.StatusOK, node)
 }
 
 func (s *Service) registry(c *gin.Context) {
