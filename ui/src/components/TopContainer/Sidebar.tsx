@@ -4,6 +4,7 @@ import { Theme, makeStyles } from '@material-ui/core/styles'
 import ArchiveOutlinedIcon from '@material-ui/icons/ArchiveOutlined'
 import DashboardOutlinedIcon from '@material-ui/icons/DashboardOutlined'
 import GitHubIcon from '@material-ui/icons/GitHub'
+import GroupWorkIcon from '@material-ui/icons/GroupWork'
 import HttpOutlinedIcon from '@material-ui/icons/HttpOutlined'
 import MenuBookOutlinedIcon from '@material-ui/icons/MenuBookOutlined'
 import { NavLink } from 'react-router-dom'
@@ -97,6 +98,7 @@ const useStyles = makeStyles((theme: Theme) => {
 
 const listItems = [
   { icon: <DashboardOutlinedIcon />, text: 'dashboard' },
+  { icon: <GroupWorkIcon />, text: 'nodes' },
   {
     icon: <StorageOutlinedIcon />,
     text: 'experiments',

@@ -5,6 +5,7 @@ import Events from 'pages/Events'
 import ExperimentDetail from 'pages/ExperimentDetail'
 import Experiments from 'pages/Experiments'
 import NewExperiment from 'components/NewExperimentNext'
+import Nodes from 'pages/Nodes'
 import { RouteProps } from 'react-router'
 import Settings from 'pages/Settings'
 import Swagger from 'pages/Swagger'
@@ -18,6 +19,10 @@ const routes: RouteProps[] = [
   {
     component: NewExperiment,
     path: '/newExperiment',
+  },
+  {
+    component: Nodes,
+    path: '/nodes',
   },
   {
     component: Experiments,

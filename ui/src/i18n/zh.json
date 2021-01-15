@@ -96,6 +96,25 @@
     },
     "complete": "所有步骤已完成"
   },
+  "nodes": {
+    "title": "节点",
+    "status": {
+      "subtitle": "节点的实时状态"
+    },
+    "add": {
+      "title": "添加节点",
+      "name": "名称",
+      "nameHelper": "请输入节点名称",
+      "kind": "类别",
+      "kindHelper": "请选择节点类型",
+      "config": "配置",
+      "configHelper": "kubeconfig 或物理节点地址"
+    },
+    "list": {
+      "k8s": "Kubernetes 集群",
+      "physic": "物理节点"
+    }
+  },
   "experiments": {
     "title": "实验",
     "state": {
