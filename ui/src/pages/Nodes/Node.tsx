@@ -38,7 +38,7 @@ const Node: React.FC<Props> = ({ data }) => {
           <Typography component="div">{name}</Typography>
           {kind === 'physic' && (
             <Typography variant="body2" color="textSecondary">
-              {window.atob(config)}
+              {config}
             </Typography>
           )}
         </Space>
