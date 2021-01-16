@@ -286,10 +286,11 @@ func (s *Service) createPhysicExperiment(c *gin.Context) {
 		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
 		return
 	}
-	fmt.Println(string(chaosBytes))
+	fmt.Println("send post request to ", node.Config, "data", string(chaosBytes))
 
 	resp, err := http.Post(fmt.Sprintf("%s/api/caas/stress", node.Config), "application/json", bytes.NewBuffer(chaosBytes))
 	if err != nil {
+		fmt.Println("create physic chaos failed", err)
 		c.Status(http.StatusBadRequest)
 		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
 		return
@@ -297,6 +298,7 @@ func (s *Service) createPhysicExperiment(c *gin.Context) {
 	out, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	if err != nil {
+		fmt.Println("read response failed", err)
 		c.Status(http.StatusBadRequest)
 		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
 		return
@@ -305,6 +307,7 @@ func (s *Service) createPhysicExperiment(c *gin.Context) {
 	response := &PhysicResponse{}
 	err = json.Unmarshal(out, &response)
 	if err != nil {
+		fmt.Println("unmarshal response failed", err)
 		c.Status(http.StatusBadRequest)
 		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
 		return
