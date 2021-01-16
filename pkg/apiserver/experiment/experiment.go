@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"sync"
 	"time"
@@ -91,7 +92,25 @@ func Register(r *gin.RouterGroup, s *Service) {
 	endpoint.PUT("/start/:uid", s.startExperiment)
 	endpoint.GET("/state", s.state)
 
-	endpoint.POST("/physic/new", s.createPhysicExperiment)
+	physicEndpoint := r.Group("/physic_exp")
+	physicEndpoint.POST("/new", s.createPhysicExperiment)
+	physicEndpoint.GET("/lists", s.listPhysicExperiment)
+	physicEndpoint.DELETE("/:uid", s.deletePhysicExperiment)
+
+}
+
+// Experiment represents an experiment instance.
+type PhysicExperiment struct {
+	ID        uint      `gorm:"primary_key" json:"id"`
+	Uid       string    `gorm:"index:uid" json:"uid"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Status    string    `json:"status"`
+	Message   string    `json:"error"`
+	// TODO: need to improve
+	Kind           string `json:"kind"`
+	Action         string `json:"action"`
+	RecoverCommand string `json:"recover_command"`
 }
 
 // Base represents the base info of an experiment.
@@ -122,6 +141,92 @@ type updateExperimentFunc func(*core.ExperimentYAMLDescription, client.Client) e
 // StatusResponse defines a common status struct.
 type StatusResponse struct {
 	Status string `json:"status"`
+}
+
+type PhysicResponse struct {
+	Status  int    `json:"status"`
+	Message string `json:"message"`
+	UID     string `json:"uid"`
+}
+
+func (s *Service) listPhysicExperiment(c *gin.Context) {
+	name := c.Query("name")
+
+	node, ok := core.Nodes[name]
+	if !ok {
+		c.Status(http.StatusBadRequest)
+		_ = c.Error(fmt.Errorf("physic node %s not found", name))
+		return
+	}
+
+	resp, err := http.Get(fmt.Sprintf("%s/api/caas/list", node.Config))
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
+		return
+	}
+	out, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
+		return
+	}
+	fmt.Println(string(out))
+
+	exps := make([]*PhysicExperiment, 0)
+	err = json.Unmarshal(out, &exps)
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
+		return
+	}
+
+	c.JSON(http.StatusOK, exps)
+}
+
+func (s *Service) deletePhysicExperiment(c *gin.Context) {
+	name := c.Query("name")
+	uid := c.Query("uid")
+	node, ok := core.Nodes[name]
+	if !ok {
+		c.Status(http.StatusBadRequest)
+		_ = c.Error(fmt.Errorf("physic node %s not found", name))
+		return
+	}
+
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/api/caas/%s", node.Config, uid), nil)
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
+		return
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
+		return
+	}
+	out, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
+		return
+	}
+	fmt.Println(string(out))
+
+	response := &PhysicResponse{}
+	err = json.Unmarshal(out, &response)
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // example:
@@ -189,7 +294,24 @@ func (s *Service) createPhysicExperiment(c *gin.Context) {
 		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
 		return
 	}
-	fmt.Println(resp)
+	out, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
+		return
+	}
+
+	response := &PhysicResponse{}
+	err = json.Unmarshal(out, &response)
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+
 	return
 }
 
