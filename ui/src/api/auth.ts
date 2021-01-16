@@ -37,3 +37,22 @@ export const namespace = (ns: string) => {
     return config
   })
 }
+
+let nodeInterceptorId: number
+
+export const node = (name: string) => {
+  if (nodeInterceptorId !== undefined) {
+    http.interceptors.request.eject(nodeInterceptorId)
+  }
+
+  nodeInterceptorId = http.interceptors.request.use((config) => {
+    config.params = {
+      ...config.params,
+      name,
+    }
+
+    return config
+  })
+}
+
+export const resetNode = () => http.interceptors.request.eject(nodeInterceptorId)

@@ -9,3 +9,5 @@ export interface Node {
 export const add = (data: Node) => http.post('/node/registry', data)
 
 export const nodes = () => http.get<Node[]>('/node/list')
+
+export const del = (name: string) => http.delete(`/node/delete/${name}`)

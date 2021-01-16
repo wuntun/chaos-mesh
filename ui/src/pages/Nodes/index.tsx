@@ -7,6 +7,7 @@ import AddNode from './AddNode'
 import AutoSizer from 'react-virtualized-auto-sizer'
 import BubbleView from './BubbleView'
 import ConfirmDialog from 'components-mui/ConfirmDialog'
+import GroupWorkIcon from '@material-ui/icons/GroupWork'
 import Node from './Node'
 import Paper from 'components-mui/Paper'
 import PaperTop from 'components-mui/PaperTop'
@@ -32,7 +33,7 @@ const Nodes = () => {
   }
 
   return (
-    <Grid container spacing={6} style={{ height: '100%' }}>
+    <Grid container spacing={6}>
       <Grid item sm={12} md={4}>
         <Paper>
           <PaperTop title={T('common.status')} subtitle={T('nodes.status.subtitle')}>
@@ -47,7 +48,7 @@ const Nodes = () => {
             </Button>
           </PaperTop>
           <Box height={450}>
-            <AutoSizer>{({ width, height }) => <BubbleView width={width} height={height} />}</AutoSizer>
+            <AutoSizer>{({ width, height }) => <BubbleView width={width} height={height} root={nodes} />}</AutoSizer>
           </Box>
         </Paper>
         <ConfirmDialog
@@ -91,6 +92,14 @@ const Nodes = () => {
                 </Grid>
               ))}
             </Grid>
+          </Box>
+        )}
+        {nodes.length === 0 && (
+          <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" height="100%">
+            <Box mb={3}>
+              <GroupWorkIcon fontSize="large" />
+            </Box>
+            <Typography align="center">未发现节点</Typography>
           </Box>
         )}
       </Grid>
