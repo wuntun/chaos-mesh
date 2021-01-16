@@ -1,5 +1,6 @@
 import { Box, Button, Grid, Typography } from '@material-ui/core'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import { useStoreDispatch, useStoreSelector } from 'store'
 
 import AddIcon from '@material-ui/icons/Add'
 import AddNode from './AddNode'
@@ -10,9 +11,25 @@ import Node from './Node'
 import Paper from 'components-mui/Paper'
 import PaperTop from 'components-mui/PaperTop'
 import T from 'components/T'
+import { getNodes } from 'slices/nodes'
 
 const Nodes = () => {
+  const { nodes } = useStoreSelector((state) => state.nodes)
+  const k8sNodes = nodes.filter((node) => node.kind === 'k8s')
+  const physicNodes = nodes.filter((node) => node.kind === 'physic')
+  const dispatch = useStoreDispatch()
+
   const [openAddNode, setOpenAddNode] = useState(false)
+
+  useEffect(() => {
+    dispatch(getNodes())
+  }, [dispatch])
+
+  const handleAddNodeSubmitCallback = () => {
+    dispatch(getNodes())
+
+    setOpenAddNode(false)
+  }
 
   return (
     <Grid container spacing={6} style={{ height: '100%' }}>
@@ -44,21 +61,38 @@ const Nodes = () => {
             },
           }}
         >
-          <AddNode />
+          <AddNode onSubmitCallback={handleAddNodeSubmitCallback} />
         </ConfirmDialog>
       </Grid>
       <Grid item sm={12} md={8}>
-        <Box mb={6}>
+        {k8sNodes.length > 0 && (
           <Box mb={6}>
-            <Typography variant="button">{T('nodes.list.k8s')}</Typography>
+            <Box mb={6}>
+              <Typography variant="button">{T('nodes.list.k8s')}</Typography>
+            </Box>
+            <Grid container spacing={3}>
+              {k8sNodes.map((node) => (
+                <Grid key={node.name} item xs={12}>
+                  <Node data={node} />
+                </Grid>
+              ))}
+            </Grid>
           </Box>
-          <Node />
-        </Box>
-        <Box mb={6}>
+        )}
+        {physicNodes.length > 0 && (
           <Box mb={6}>
-            <Typography variant="button">{T('nodes.list.physic')}</Typography>
+            <Box mb={6}>
+              <Typography variant="button">{T('nodes.list.physic')}</Typography>
+            </Box>
+            <Grid container spacing={3}>
+              {physicNodes.map((node) => (
+                <Grid key={node.name} item xs={12}>
+                  <Node data={node} />
+                </Grid>
+              ))}
+            </Grid>
           </Box>
-        </Box>
+        )}
       </Grid>
     </Grid>
   )

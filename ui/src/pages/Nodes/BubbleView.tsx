@@ -25,9 +25,11 @@ const root = {
 const BubbleView = (props: any) => (
   <Bubble
     {...props}
+    colors={{ scheme: 'blues' }}
     root={root}
     margin={{ top: 30, right: 30, bottom: 30, left: 30 }}
     padding={15}
+    borderWidth={3}
     identity="name"
     value="num"
     isZoomable={false}

@@ -2,17 +2,30 @@ import { Box, Button, MenuItem } from '@material-ui/core'
 import { Form, Formik, FormikHelpers } from 'formik'
 import { SelectField, TextField } from 'components/FormField'
 
+import { Node } from 'api/nodes'
 import React from 'react'
 import T from 'components/T'
+import api from 'api'
 
-interface FormValues {
-  name: string
-  kind: 'k8s' | 'physic'
-  config: string
+type FormValues = Node
+
+interface Props {
+  onSubmitCallback?: (values: FormValues) => void
 }
 
-const AddNode = () => {
-  const submitNode = (values: FormValues, { resetForm }: FormikHelpers<FormValues>) => {}
+const AddNode: React.FC<Props> = ({ onSubmitCallback }) => {
+  const submitNode = (values: FormValues, { resetForm }: FormikHelpers<FormValues>) => {
+    api.nodes
+      .add({
+        ...values,
+        config: window.btoa(values.config),
+      })
+      .then(() => {
+        typeof onSubmitCallback === 'function' && onSubmitCallback(values)
+
+        resetForm()
+      })
+  }
 
   return (
     <Formik initialValues={{ name: '', kind: 'k8s', config: '' }} onSubmit={submitNode}>
