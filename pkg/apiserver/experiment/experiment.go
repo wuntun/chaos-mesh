@@ -307,7 +307,7 @@ func (s *Service) createPhysicExperiment(c *gin.Context) {
 	response := &PhysicResponse{}
 	err = json.Unmarshal(out, &response)
 	if err != nil {
-		fmt.Println("unmarshal response failed", err)
+		fmt.Println("unmarshal response failed", err, string(out))
 		c.Status(http.StatusBadRequest)
 		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
 		return
