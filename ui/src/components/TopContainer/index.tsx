@@ -5,6 +5,7 @@ import { ThemeProvider, makeStyles } from '@material-ui/core/styles'
 import customTheme, { darkTheme as customDarkTheme } from 'theme'
 import { drawerCloseWidth, drawerWidth } from './Sidebar'
 import { setAlertOpen, setNameSpace, setSecurityMode, setTokenName, setTokens } from 'slices/globalStatus'
+import { setKind, setNode } from 'slices/nodes'
 import { useStoreDispatch, useStoreSelector } from 'store'
 
 import Alert from '@material-ui/lab/Alert'
@@ -102,6 +103,9 @@ const TopContainer = () => {
           dispatch(setSecurityMode(false))
         }
       })
+      .then(() => {
+        restoreNode()
+      })
       .finally(() => setLoading(false))
   }
 
@@ -130,6 +134,21 @@ const TopContainer = () => {
     if (globalNamespace) {
       api.auth.namespace(globalNamespace)
       dispatch(setNameSpace(globalNamespace))
+    }
+  }
+
+  function restoreNode() {
+    const node = LS.get('node')
+
+    if (node) {
+      api.auth.node(node)
+      dispatch(setNode(node))
+    }
+
+    const kind = LS.get('node-kind')
+
+    if (kind) {
+      dispatch(setKind(kind as any))
     }
   }
 

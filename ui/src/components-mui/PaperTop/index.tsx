@@ -11,18 +11,27 @@ const useStyles = makeStyles({
     width: '100%',
     height: 56,
   },
+  title: {
+    fontWeight: 700,
+  },
 })
 
 interface PaperTopProps {
   title?: string | JSX.Element
+  subtitle?: string | JSX.Element
 }
 
-const PaperTop: React.FC<PaperTopProps> = ({ title, children }) => {
+const PaperTop: React.FC<PaperTopProps> = ({ title, subtitle, children }) => {
   const classes = useStyles()
 
   return (
     <Box className={classes.root} px={3}>
-      <Typography variant="h6">{title}</Typography>
+      <Box>
+        <Typography className={classes.title}>{title}</Typography>
+        <Typography variant="body2" color="textSecondary">
+          {subtitle}
+        </Typography>
+      </Box>
       {children}
     </Box>
   )

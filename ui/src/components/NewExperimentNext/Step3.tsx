@@ -1,6 +1,6 @@
 import { Box, Button, Typography } from '@material-ui/core'
-import { RootState, useStoreDispatch } from 'store'
 import { setAlert, setAlertOpen } from 'slices/globalStatus'
+import { useStoreDispatch, useStoreSelector } from 'store'
 
 import DoneAllIcon from '@material-ui/icons/DoneAll'
 import Paper from 'components-mui/Paper'
@@ -13,10 +13,10 @@ import { parseSubmit } from 'lib/formikhelpers'
 import { resetNewExperiment } from 'slices/experiments'
 import { useHistory } from 'react-router-dom'
 import { useIntl } from 'react-intl'
-import { useSelector } from 'react-redux'
 
 const Step3 = () => {
-  const { step1, step2, basic, target } = useSelector((state: RootState) => state.experiments)
+  const { step1, step2, basic, target } = useStoreSelector((state) => state.experiments)
+  const { kind } = useStoreSelector((state) => state.nodes)
   const dispatch = useStoreDispatch()
 
   const history = useHistory()
@@ -29,11 +29,13 @@ const Step3 = () => {
     })
 
     if (process.env.NODE_ENV === 'development') {
+      console.debug('Current node kind', kind)
       console.debug('Debug parsedValues:', parsedValues)
     }
 
-    api.experiments
-      .newExperiment(parsedValues)
+    const newFunc = kind === 'physic' ? api.experiments.physicNew : api.experiments.newExperiment
+
+    newFunc(parsedValues)
       .then(() => {
         dispatch(
           setAlert({

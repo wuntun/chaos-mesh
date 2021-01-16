@@ -186,7 +186,7 @@ const ExperimentListItem: React.FC<ExperimentListItemProps> = ({
             ) : (
               <ExperimentEventsPreview events={(e as Experiment).events} />
             ))}
-          <Typography variant="body1" component="div">
+          <Typography component="div">
             {e.name}
             {isTabletScreen && (
               <Typography variant="body2" color="textSecondary">
