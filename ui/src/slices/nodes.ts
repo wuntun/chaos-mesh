@@ -37,7 +37,7 @@ const nodesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(getNodes.fulfilled, (state, action) => {
-      state.nodes = Object.values(action.payload)
+      state.nodes = action.payload
     })
   },
 })
