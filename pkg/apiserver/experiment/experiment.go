@@ -187,7 +187,7 @@ func (s *Service) listPhysicExperiment(c *gin.Context) {
 
 func (s *Service) deletePhysicExperiment(c *gin.Context) {
 	name := c.Query("name")
-	uid := c.Query("uid")
+	uid := c.Param("uid")
 	node, ok := core.Nodes[name]
 	if !ok {
 		c.Status(http.StatusBadRequest)
