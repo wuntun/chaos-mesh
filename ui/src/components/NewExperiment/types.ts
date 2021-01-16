@@ -142,3 +142,13 @@ export interface Experiment extends ExperimentBasic {
   target: ExperimentTarget
   scheduler: ExperimentSchedule
 }
+
+export interface PhysicExperiment {
+  name: string
+  namespace?: unknown
+  labels?: unknown
+  annotations?: unknown
+  scope?: unknown
+  target: ExperimentTarget
+  scheduler: ExperimentSchedule
+}

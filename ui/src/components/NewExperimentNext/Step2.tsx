@@ -36,6 +36,7 @@ const Step2 = () => {
   const classes = useStyles()
 
   const { namespaces, step2, basic } = useStoreSelector((state) => state.experiments)
+  const { kind } = useStoreSelector((state) => state.nodes)
   const dispatch = useStoreDispatch()
 
   const [init, setInit] = useState(basicData)
@@ -79,16 +80,18 @@ const Step2 = () => {
         )}
       </PaperTop>
       <Box position="relative" p={6} hidden={step2}>
-        <Formik enableReinitialize initialValues={init} validationSchema={schema} onSubmit={handleOnSubmitStep2}>
+        <Formik enableReinitialize initialValues={init} onSubmit={handleOnSubmitStep2}>
           {({ errors, touched }) => (
             <Form>
               <Grid container spacing={9}>
-                <Grid item xs={12} md={6}>
-                  <Box mb={3}>
-                    <Typography>{T('newE.steps.scope')}</Typography>
-                  </Box>
-                  {namespaces.length ? <Scope namespaces={namespaces} /> : <SkeletonN n={6} />}
-                </Grid>
+                {kind !== 'physic' && (
+                  <Grid item xs={12} md={6}>
+                    <Box mb={3}>
+                      <Typography>{T('newE.steps.scope')}</Typography>
+                    </Box>
+                    {namespaces.length ? <Scope namespaces={namespaces} /> : <SkeletonN n={6} />}
+                  </Grid>
+                )}
                 <Grid item xs={12} md={6}>
                   <Box mb={3}>
                     <Typography>{T('newE.steps.basic')}</Typography>
@@ -101,24 +104,26 @@ const Step2 = () => {
                     error={errors.name && touched.name ? true : false}
                   />
 
-                  <AdvancedOptions>
-                    {namespaces.length && (
-                      <SelectField
-                        id="namespace"
-                        name="namespace"
-                        label={T('newE.basic.namespace')}
-                        helperText={T('newE.basic.namespaceHelper')}
-                      >
-                        {namespaces.map((n) => (
-                          <MenuItem key={n} value={n}>
-                            {n}
-                          </MenuItem>
-                        ))}
-                      </SelectField>
-                    )}
-                    <LabelField id="labels" name="labels" label={T('k8s.labels')} isKV />
-                    <LabelField id="annotations" name="annotations" label={T('k8s.annotations')} isKV />
-                  </AdvancedOptions>
+                  {kind !== 'physic' && (
+                    <AdvancedOptions>
+                      {namespaces.length && (
+                        <SelectField
+                          id="namespace"
+                          name="namespace"
+                          label={T('newE.basic.namespace')}
+                          helperText={T('newE.basic.namespaceHelper')}
+                        >
+                          {namespaces.map((n) => (
+                            <MenuItem key={n} value={n}>
+                              {n}
+                            </MenuItem>
+                          ))}
+                        </SelectField>
+                      )}
+                      <LabelField id="labels" name="labels" label={T('k8s.labels')} isKV />
+                      <LabelField id="annotations" name="annotations" label={T('k8s.annotations')} isKV />
+                    </AdvancedOptions>
+                  )}
                   <Box mb={3}>
                     <Divider />
                   </Box>

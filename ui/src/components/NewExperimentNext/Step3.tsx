@@ -5,6 +5,7 @@ import { useStoreDispatch, useStoreSelector } from 'store'
 import DoneAllIcon from '@material-ui/icons/DoneAll'
 import Paper from 'components-mui/Paper'
 import PaperTop from 'components-mui/PaperTop'
+import { PhysicExperiment } from 'components/NewExperiment/types'
 import PublishIcon from '@material-ui/icons/Publish'
 import React from 'react'
 import T from 'components/T'
@@ -23,13 +24,19 @@ const Step3 = () => {
   const intl = useIntl()
 
   const submitExperiment = () => {
-    const parsedValues = parseSubmit({
+    let parsedValues = parseSubmit({
       ...basic,
       target,
     })
 
+    if (kind === 'physic') {
+      delete (parsedValues as PhysicExperiment).namespace
+      delete (parsedValues as PhysicExperiment).labels
+      delete (parsedValues as PhysicExperiment).annotations
+      delete (parsedValues as PhysicExperiment).scope
+    }
+
     if (process.env.NODE_ENV === 'development') {
-      console.debug('Current node kind', kind)
       console.debug('Debug parsedValues:', parsedValues)
     }
 

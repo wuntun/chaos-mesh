@@ -11,7 +11,7 @@ export const state = (namespace = null) =>
   })
 
 export const newExperiment = (data: Experiment) => http.post('/experiments/new', data)
-export const physicNew = (data: Experiment) => http.post('/experiments/physic/new', data)
+export const physicNew = (data: Experiment) => http.post('/physic_exp/new', data)
 
 export const experiments = (namespace = null, name = null, kind = null, status = null) =>
   http.get<ExperimentReponse[]>('/experiments', {
