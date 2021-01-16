@@ -125,11 +125,12 @@ type StatusResponse struct {
 }
 
 // example:
-// curl -X POST 127.0.0.1:2333/api/node/physic/registry/test -d "http://127.0.0.1:31767"
-// export EXP_JSON='{"name": "ci-test", "namespace": "busybox", "scope": {"mode":"one", "namespace_selectors": ["busybox"]}, "target": {"kind": "StressChaos", "stress_chaos": { "cpu": {"load": 1}}}}'
-// curl -X POST 127.0.0.1:2333/api/experiments/physic/new -H "Content-Type: application/json" -d $EXP_JSON -H "name: test"
+// curl -X POST 127.0.0.1:2333/api/node/registry -d '{"name": "test", "kind": "physic", "config": "http://127.0.0.1:31767"}'
+// export EXP_JSON='{"name": "ci-test", "namespace": "busybox", "scope":\
+// {"mode":"one", "namespace_selectors": ["busybox"]}, "scheduler":{"cron": "@every 10m", "duration": "1m"}, "target": {"kind": "StressChaos", "stress_chaos": { "cpu": {"load": 1}}}}'
+// curl -X POST "127.0.0.1:2333/api/experiments/physic/new?name=test" -H "Content-Type: application/json" -d $EXP_JSON -H "name: test"
 func (s *Service) createPhysicExperiment(c *gin.Context) {
-	name := c.Request.Header.Get("name")
+	name := c.Query("name")
 
 	node, ok := core.Nodes[name]
 	if !ok {
@@ -173,13 +174,16 @@ func (s *Service) createPhysicExperiment(c *gin.Context) {
 	if exp.Target.StressChaos.ContainerName != nil {
 		chaos.Spec.ContainerName = exp.Target.StressChaos.ContainerName
 	}
+
 	chaosBytes, err := json.Marshal(chaos)
 	if err != nil {
 		c.Status(http.StatusBadRequest)
 		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
 		return
 	}
-	resp, err := http.Post(fmt.Sprintf("%s/stress", node.Config), "application/json", bytes.NewBuffer(chaosBytes))
+	fmt.Println(string(chaosBytes))
+
+	resp, err := http.Post(fmt.Sprintf("%s/api/caas/stress", node.Config), "application/json", bytes.NewBuffer(chaosBytes))
 	if err != nil {
 		c.Status(http.StatusBadRequest)
 		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))

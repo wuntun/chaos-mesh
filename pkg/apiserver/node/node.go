@@ -99,12 +99,8 @@ func (s *Service) list(c *gin.Context) {
 		_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))
 		return
 	}
-	nodesJson := make(map[string]*core.Node)
-	for _, node := range nodes {
-		nodesJson[node.Name] = node
-	}
 
-	c.JSON(http.StatusOK, nodesJson)
+	c.JSON(http.StatusOK, nodes)
 }
 
 func (s *Service) get(c *gin.Context) {
@@ -127,29 +123,30 @@ func (s *Service) registry(c *gin.Context) {
 		return
 	}
 
-	configBytes, err := base64.StdEncoding.DecodeString(node.Config)
-	if err != nil {
-		c.Status(http.StatusBadRequest)
-		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
-		return
-	}
-
-	node.Config = string(configBytes)
 	fmt.Println("registry node", node)
 
 	if node.Kind == "k8s" {
+		configBytes, err := base64.StdEncoding.DecodeString(node.Config)
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
+			return
+		}
+
+		node.Config = string(configBytes)
+
 		// save client into poll
-		_, err := clientpool.K8sClients.KubeClient(node.Name, configBytes)
+		_, err = clientpool.K8sClients.KubeClient(node.Name, configBytes)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))
 			return
-		} else {
-			core.Nodes[node.Name] = node
 		}
 	}
 
-	err = s.node.Create(context.Background(), node)
+	core.Nodes[node.Name] = node
+
+	err := s.node.Create(context.Background(), node)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))
