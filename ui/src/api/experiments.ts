@@ -22,8 +22,10 @@ export const experiments = (namespace = null, name = null, kind = null, status =
       status,
     },
   })
+export const physicExperiments = () => http.get('/physic_exp/lists')
 
 export const deleteExperiment = (uuid: uuid) => http.delete(`/experiments/${uuid}`)
+export const deletePhysicExperiment = (uuid: uuid) => http.delete(`/physic_exp/${uuid}`)
 
 export const pauseExperiment = (uuid: uuid) => http.put(`/experiments/pause/${uuid}`)
 

@@ -33,9 +33,10 @@ export default function Experiments() {
   const fetchExperiments = () => {
     setLoading(true)
 
-    api.experiments
-      .experiments()
-      .then(({ data }) => setExperiments(data))
+    Promise.all([api.experiments.experiments(), api.experiments.physicExperiments()])
+      .then((values) => {
+        setExperiments([...values[0].data, ...values[1].data])
+      })
       .catch(console.error)
       .finally(() => setLoading(false))
   }

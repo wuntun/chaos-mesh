@@ -15,6 +15,7 @@ import PauseCircleOutlineIcon from '@material-ui/icons/PauseCircleOutline'
 import PlayCircleOutlineIcon from '@material-ui/icons/PlayCircleOutline'
 import { RootState } from 'store'
 import T from 'components/T'
+import api from 'api'
 import day from 'lib/dayjs'
 import { useHistory } from 'react-router-dom'
 import { useSelector } from 'react-redux'
@@ -203,6 +204,17 @@ const ExperimentListItem: React.FC<ExperimentListItemProps> = ({
         {isTabletScreen ? (
           <IconButton aria-label="Expand row" size="small" onClick={handleToggle}>
             {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+          </IconButton>
+        ) : (e as any).recover_command ? (
+          <IconButton
+            color="primary"
+            title={intl.formatMessage({ id: 'common.delete' })}
+            aria-label={intl.formatMessage({ id: 'common.delete' })}
+            component="span"
+            size="small"
+            onClick={() => api.experiments.deletePhysicExperiment((e as any).uid)}
+          >
+            <DeleteOutlinedIcon />
           </IconButton>
         ) : (
           <Actions />
