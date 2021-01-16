@@ -125,16 +125,15 @@ func (s *Service) registry(c *gin.Context) {
 
 	fmt.Println("registry node", node)
 
+	configBytes, err := base64.StdEncoding.DecodeString(node.Config)
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
+		return
+	}
+	node.Config = string(configBytes)
+
 	if node.Kind == "k8s" {
-		configBytes, err := base64.StdEncoding.DecodeString(node.Config)
-		if err != nil {
-			c.Status(http.StatusBadRequest)
-			_ = c.Error(utils.ErrInvalidRequest.WrapWithNoMessage(err))
-			return
-		}
-
-		node.Config = string(configBytes)
-
 		// save client into poll
 		_, err = clientpool.K8sClients.KubeClient(node.Name, configBytes)
 		if err != nil {
@@ -146,7 +145,7 @@ func (s *Service) registry(c *gin.Context) {
 
 	core.Nodes[node.Name] = node
 
-	err := s.node.Create(context.Background(), node)
+	err = s.node.Create(context.Background(), node)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		_ = c.Error(utils.ErrInternalServer.WrapWithNoMessage(err))

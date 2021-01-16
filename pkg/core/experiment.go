@@ -94,7 +94,7 @@ type ExperimentYAMLMetadata struct {
 // ExperimentInfo defines a form data of Experiment from API.
 type ExperimentInfo struct {
 	Name        string            `json:"name" binding:"required,NameValid"`
-	Namespace   string            `json:"namespace" binding:"required,NameValid"`
+	Namespace   string            `json:"namespace"`
 	Labels      map[string]string `json:"labels" binding:"MapSelectorsValid"`
 	Annotations map[string]string `json:"annotations" binding:"MapSelectorsValid"`
 	Scope       ScopeInfo         `json:"scope"`
